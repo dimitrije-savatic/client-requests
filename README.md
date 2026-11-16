@@ -1,6 +1,6 @@
-<!-- Pokretanje aplikacije
+Pokretanje aplikacije
 
-Kako bi se aplikacija pokrenula nakon git pull-a, potrebno je prebaciti se u folder backend. -->
+Kako bi se aplikacija pokrenula nakon git pull-a, potrebno je prebaciti se u folder backend.
 
 1. Pokretanje baze i backenda 
 
@@ -26,17 +26,32 @@ cd client-requests/frontend
 npm install
 
 npm run dev
+//
 
-<!-- Trebalo mi je oko 8-9 sati da odradim aplikaciju. Nisam uspeo sve da završim, ostala mi je optimizacija grešaka na frontu(ne prikazuju se kako bi trebalo). Backend je uradjen potpuno.
+React radi na localhost:5173, a Laravel na localhost:8000.
+
+Trebalo mi je oko 8-9 sati da odradim aplikaciju. Nisam uspeo sve da završim, ostala mi je optimizacija grešaka na frontu(ne prikazuju se kako bi trebalo). Backend je uradjen potpuno.
 
 Indeks(client_id,status) nam pomaže kod optimizacije pretrage zahteva. Kada imamo veliki broj zahteva u bazi i želimo da pretražimo neki zahtev po klijentu ili klijentu i statusu, indeks će nam pomoći da pretraga bude brža.
-
 
 SQL za summary: 
 
 SELECT status, COUNT(*) as total
 FROM requests
 WHERE client_id = $client_id
-GROUP BY status; 
+GROUP BY status;
 
--->
+Response:
+
+    {
+        "status": "open",
+        "total": 10
+    },
+    {
+        "status": "done",
+        "total": 8
+    },
+    {
+        "status": "in_progress",
+        "total": 8
+    }
