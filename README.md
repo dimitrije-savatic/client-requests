@@ -26,7 +26,8 @@ cd client-requests/frontend
 npm install
 
 npm run dev
-//
+
+3. Odgovori
 
 React radi na localhost:5173, a Laravel na localhost:8000.
 
