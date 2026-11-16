@@ -36,7 +36,7 @@ class RequestController extends Controller
                 $q->where('priority', $priority);
             })
             ->when($values['q'] ?? null, function ($q, $search) {
-                $q->whereRaw('title ILIKE ?', ['%{search}%']);
+                $q->whereRaw('title ILIKE ?', ["%{$search}%"]);
             });
 
         $requests = $query->get();
@@ -106,7 +106,7 @@ class RequestController extends Controller
         if ($requestById == null) {
             throw new Exception('Request with id:'.$id.'not found.', 404);
         }
-        $validationRules = ['status' => ['required', Rule::in(Status::values())], 'resolution' => 'nullable|string'];
+        $validationRules = ['status' => ['required', Rule::in(Status::values())], 'resolution' => 'nullable|string|min:10'];
 
         $validator = Validator::make($request->all(), $validationRules);
         if ($validator->fails()) {

@@ -7,7 +7,10 @@ function App() {
   const [requests, setRequests] = useState<any>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHidden, setIsHidden] = useState(true);
   const [error, setError] = useState<string[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [resolution, setResolution] = useState('');
   const [searchTerm, setSearchTerm] = useState({
     client_id: '',
     status: '',
@@ -25,29 +28,31 @@ function App() {
   });
 
   useEffect(() => {
-    const fetchRequests = async () => {
-      try {
-        const data = await getRequests(searchTerm);
-        setRequests(data);
-      } catch (error) {
-        setError(['Failed to fetch requests.']);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    const fetchClients = async () => {
-      try {
-        const data = await getClients();
-        setClients(data);
-      } catch (error) {
-        setError(['Failed to fetch clients.']);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchRequests();
     fetchClients();
   }, [searchTerm]);
+
+  const fetchRequests = async () => {
+    try {
+      const data = await getRequests(searchTerm);
+      setRequests(data);
+    } catch (error) {
+      setError(['Failed to fetch requests.']);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const data = await getClients();
+      setClients(data);
+    } catch (error) {
+      setError(['Failed to fetch clients.']);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFilterChange = (field: any, value: any) => {
     setSearchTerm(prev => ({
@@ -106,6 +111,25 @@ function App() {
       setError(['Server connection failed.']);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  const handleEditRequest = async (id: number, status: string, resolution?: string) => {
+    const response = await fetch('http://localhost:8000/api/requests/' + id, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ status: status, resolution: resolution }),
+    })
+    if (response.ok) {
+      await fetchRequests();
+    }
+
+    if (!response.ok) {
+      const data = await response.json();
+      setError([data.error?.details || 'Failed to update request.']);
     }
   }
 
@@ -174,18 +198,21 @@ function App() {
 
                     <tbody className="divide-y divide-[#A1A09A] text-white">
                       {requests.data.map((request: any) => (
-                        <tr className="transition-colors hover:bg-white/5">
+                        <tr key={request.id} className="transition-colors hover:bg-white/5">
                           <td className="pl-5 px-1 py-4">{request.client?.name}</td>
                           <td className="px-1 py-4 font-medium">{request.title}</td>
-                          <td className="px-1 py-4">
+                          <td className="px-1 py-4 hover:cursor-pointer" onClick={() => {
+                            setSelectedRequest(request);
+                            setIsHidden(false);
+                          }}>
                             <span className="rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white">
                               {request.status}
                             </span>
                           </td>
                           <td className="px-1 py-4 text-green-500">{request.priority}</td>
                           <td className="px-1 py-4 whitespace-nowrap">{request.due_date}</td>
-                          <td className="px-1 py-4">{request.resolution?.substring(0, 50)}...</td>
-                          <td className="px-1 py-4">{request.description.substring(0, 50)}...</td>
+                          <td className="px-1 py-4">{request.resolution ? request.resolution?.substring(0, 50) : ''}{request.resolution && request.resolution.length > 50 ? '...' : ''}</td>
+                          <td className="px-1 py-4">{request.description ? request.description?.substring(0, 50) : ''}{request.description && request.description.length > 50 ? '...' : ''}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -256,6 +283,51 @@ function App() {
           </main >
         </div >
       </div >
+
+      <div className={`${isHidden ? 'hidden' : 'fixed'} inset-0 z-50 flex items-center justify-center bg-black/40 px-4`}>
+
+        <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+
+          <div className="border-b border-[#D8D8D2] px-6 py-5">
+            <h2 className="text-lg font-semibold">
+              Edit request
+            </h2>
+          </div>
+
+          <div className="p-6">
+
+            <label className="mb-1.5 block text-sm font-medium">Status:</label>
+            <select id="status-filter" value={selectedRequest?.status} onChange={(e) => setSelectedRequest({ ...selectedRequest, status: e.target.value })} className="w-full rounded-lg border border-[#D8D8D2] bg-[#FAFAF8] px-3 py-2.5 mb-1.5 text-sm outline-none focus:border-green-500">
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+
+            <label className="mb-1.5 block text-sm font-medium">
+              Resolution
+            </label>
+
+            <textarea
+              rows={5}
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              placeholder="Describe how the request was resolved..."
+              className="w-full resize-none rounded-lg border border-[#D8D8D2] bg-[#FAFAF8] px-3 py-2.5 text-sm outline-none focus:border-green-500"
+            />
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button className="rounded-lg border border-[#D8D8D2] px-4 py-2.5 text-sm font-medium hover:cursor-pointer" onClick={() => setIsHidden(true)}>
+                Cancel
+              </button>
+
+              <button className="rounded-lg bg-green-500 px-4 py-2.5 text-sm font-medium text-white hover:cursor-pointer" onClick={() => [handleEditRequest(selectedRequest.id, selectedRequest.status, resolution !== '' ? resolution : undefined), setIsHidden(true)]}>
+                Mark as done
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
     </>
   )
 }
